@@ -4,16 +4,46 @@ from torchvision.datasets import ImageFolder
 import numpy as np
 from pathlib import Path
 from PIL import Image
-import matplotlib.pyplot as plt
+import scipy.io as sio
 from .utils import _check_anns, _ann_to_list
 
 
 __all__ = [
   'get_cub200_anns', 'cub200',
-  'get_fgvc_aircraft_anns', 'fgvc_aircraft'
+  'get_fgvc_aircraft_anns', 'fgvc_aircraft',
+  'get_cars196_anns', 'cars196'
 ]
 
 __datasets__ = ['CUB_200_2011', 'fgvc-aircraft-2013b', 'cars196']
+
+
+class FireblastDataset(Dataset):
+  """FireblastDataset is a PyTorch Custom Dataset implementation for inner use.
+  For initialization, image dictionary and sample list necessarily specify.
+  The sample list augment is a tuple(2-element list) list;
+  each tuple contains a pair of image file name string and image category index integer.
+  Transform and target_transform remain same with Torchvision.transformers for Dataset.
+
+  """
+
+  def __init__(self, image_dict: Path, samples, transform=None, target_transform=None):
+    self.image_dict = image_dict
+    self.samples = samples
+    self.transform = transform
+    self.target_transform = target_transform
+
+  def __getitem__(self, index):
+    image = Image.open((self.image_dict / self.samples[index][0]).with_suffix('.jpg')).convert('RGB')
+    label = self.samples[index][1]
+    if self.transform:
+      image = self.transform(image)
+    if self.target_transform:
+      label = self.target_transform(label)
+
+    return image, label
+    
+  def __len__(self):
+    return len(self.samples)
 
 
 def get_cub200_anns(root: str = './CUB_200_2011', check: bool = False, **kwargs) -> dict:
@@ -113,27 +143,6 @@ def get_fgvc_aircraft_anns(root: str = './fgvc-aircraft-2013b', check: bool = Fa
   return anns_dict
 
 
-class FGVCAircraft(Dataset):
-  def __init__(self, image_dict: Path, train_ann, transform=None, target_transform=None):
-    self.image_dict = image_dict
-    self.train_ann = train_ann
-    self.transform = transform
-    self.target_transform = target_transform
-
-  def __getitem__(self, index):
-    image = Image.open((self.image_dict / self.train_ann[index][0]).with_suffix('.jpg')).convert('RGB')
-    label = self.train_ann[index][1]
-    if self.transform:
-      image = self.transform(image)
-    if self.target_transform:
-      label = self.target_transform(label)
-
-    return image, label
-    
-  def __len__(self):
-    return len(self.train_ann)
-
-
 def fgvc_aircraft(anns: dict, transform=None, target_transform=None, **kwargs) -> dict:
   """Create PyTorch Dataset instances for FGVC-Aircraft dataset.
 
@@ -153,7 +162,7 @@ def fgvc_aircraft(anns: dict, transform=None, target_transform=None, **kwargs) -
   assert anns['images_variant_trainval']
   assert anns['images_variant_test']
 
-  varts = [l.rstrip() for l in open(anns['variants'], 'r').readlines()]
+  varts = [l.rstrip('\n') for l in open(anns['variants'], 'r').readlines()]
   varts_idx = {}
   for i, vart in enumerate(varts):
     varts_idx[vart] = i
@@ -163,15 +172,79 @@ def fgvc_aircraft(anns: dict, transform=None, target_transform=None, **kwargs) -
   vart_imgs_trainval = _ann_to_list(ann_file=anns['images_variant_trainval'], varts_idx=varts_idx)
   vart_imgs_test = _ann_to_list(ann_file=anns['images_variant_test'], varts_idx=varts_idx)
 
-  train = FGVCAircraft(anns['image_folder'], vart_imgs_train, transform=transform, target_transform=target_transform)
-  valid = FGVCAircraft(anns['image_folder'], vart_imgs_val, transform=transform, target_transform=target_transform)
-  trainval = FGVCAircraft(anns['image_folder'], vart_imgs_trainval, transform=transform, target_transform=target_transform)
-  test = FGVCAircraft(anns['image_folder'], vart_imgs_test, transform=transform, target_transform=target_transform)
+  train = FireblastDataset(anns['image_folder'], vart_imgs_train, transform=transform, target_transform=target_transform)
+  valid = FireblastDataset(anns['image_folder'], vart_imgs_val, transform=transform, target_transform=target_transform)
+  trainval = FireblastDataset(anns['image_folder'], vart_imgs_trainval, transform=transform, target_transform=target_transform)
+  test = FireblastDataset(anns['image_folder'], vart_imgs_test, transform=transform, target_transform=target_transform)
 
   return {
     'train': train, 
     'val': valid,
     'trainval': trainval,
+    'test': test
+  }
+
+
+def get_cars196_anns(root: str = './cars196', check: bool = False, **kwargs) -> dict:
+  """Get Stanford Cars dataset annotations as dict given root path.
+  
+  Args:
+    root (str): String of root directory path for Stanford Cars dataset.
+    check (bool): If True, checks annotation files existence and fix dict results.
+
+  Returns:
+    dict (dict): Stanford Cars dataset annotation dict object.
+
+  """
+  rt_path = Path(root)
+  devkit_path = rt_path / 'devkit'
+  anns_dict = {
+    'train_image_folder': rt_path / 'cars_train',
+    'test_image_folder': rt_path / 'cars_test',
+    'cars_meta': devkit_path / 'cars_meta.mat',
+    'cars_train_annos': devkit_path / 'cars_train_annos.mat',
+    'cars_test_annos_withlabels': devkit_path / 'cars_test_annos_withlabels.mat',
+    'root': rt_path
+  }
+  if check: _check_anns(name='Cars196', anns=anns_dict)
+
+  return anns_dict
+
+
+def cars196(anns: dict, transform=None, target_transform=None, **kwargs) -> dict:
+  """Create PyTorch Dataset instances for Stanford Cars dataset.
+
+  Args:
+    anns (dict): Annotation dict returned by get_cars196_anns(...).
+    transform: Torchvision transform for images.
+    target_transform: Torchvision transform for targets.
+  
+  Returns:
+    dict (dict): A dict object contains train and test PyTorch Dataset instances.
+
+  """
+  assert anns['cars_meta']
+  assert anns['cars_train_annos']
+  assert anns['cars_test_annos_withlabels']
+  assert anns['train_image_folder']
+  assert anns['test_image_folder']
+
+  cars_meta = sio.loadmat(anns['cars_meta'], squeeze_me=True)['class_names'].tolist()
+  cars_idx = {}
+  for i, car in enumerate(cars_meta):
+    cars_idx[car] = i + 1
+  # annos: xxyy_bbox, class, fname
+  cars_train_li = sio.loadmat(anns['cars_train_annos'], squeeze_me=True)['annotations'].tolist()
+  cars_train = [[str(x[-1]), int(x[-2])] for x in cars_train_li]
+
+  cars_test_li = sio.loadmat(anns['cars_test_annos_withlabels'], squeeze_me=True)['annotations'].tolist()
+  cars_test = [[str(x[-1]), int(x[-2])] for x in cars_test_li]
+
+  train = FireblastDataset(anns['train_image_folder'], cars_train, transform=transform, target_transform=target_transform)
+  test = FireblastDataset(anns['test_image_folder'], cars_test, transform=transform, target_transform=target_transform)
+
+  return {
+    'train': train,
     'test': test
   }
 

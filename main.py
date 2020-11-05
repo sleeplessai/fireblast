@@ -1,14 +1,12 @@
 from fireblast.data.datasets import get_cub200_anns, cub200
 from fireblast.data.datasets import get_fgvc_aircraft_anns, fgvc_aircraft
 from fireblast.data.datasets import get_cars196_anns, cars196
-from fireblast.data.utils import _plot_pil_image
+from fireblast.data.utils import _plot_pil_image, FBPP
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 
 # dev use
 import logging
-from pprint import PrettyPrinter
-pp = PrettyPrinter(indent=2)
 
 
 def test_fireblast_datasets(name, iteration=False, rand_plot=False):
@@ -25,33 +23,75 @@ def test_fireblast_datasets(name, iteration=False, rand_plot=False):
   elif name == 'Cars196':
     anns = get_cars196_anns(root=r'/home/mlss/data/cars196', check=True)
     dtst = cars196(anns=anns, transform=im_transfm)
-  pp.pprint(anns)
+  FBPP.pprint(anns)
   # return # for dev breakpoint
   if not dtst:
     return
-  
-  for k in dtst.keys():
-    img_loader = DataLoader(
-      dataset=dtst[k],
-      batch_size=128,
-      shuffle=True,
-      num_workers=6,
-      pin_memory=True
-    )
-    if iteration:
+
+  if iteration:
+    for k in dtst.keys():
+      img_loader = DataLoader(
+        dataset=dtst[k],
+        batch_size=128,
+        shuffle=True,
+        num_workers=6,
+        pin_memory=True
+      )
       for idx, item in enumerate(img_loader):
         x, y = item[0].cuda(), item[1].cuda()
         # print(idx, item[0].shape, item[1])
       logging.warning(f'{name}.{k} iteration passed.')
-  
+
   if rand_plot:
+    return
     import random
     from torchvision.transforms.functional import to_pil_image
     dt, _ = dtst['test'].__getitem__(random.randint(0, dtst.__len__() - 1))
     _plot_pil_image(dt)
 
+  return anns, dtst
+
+
+from fireblast.models.resnet import resnet18, resnet34, resnet50, resnext50_32x4d
+from fireblast.models.vgg import vgg11, vgg11_bn, vgg13, vgg13_bn, vgg16, vgg16_bn
+
+
+def test_fireblast_models(name="resnet18", pretrained=False, plot_network=False):
+  fireblast_models = {
+    'resnet18': resnet18,
+    'resnet34': resnet34,
+    'resnet50': resnet50,
+    'resnext50_32x4d': resnext50_32x4d,
+    'vgg11': vgg11,
+    'vgg13': vgg13,
+    'vgg16': vgg16,
+    'vgg11_bn': vgg11_bn,
+    'vgg13_bn': vgg13_bn,
+    'vgg16_bn': vgg16_bn
+  }
+
+  assert name in fireblast_models.keys() or name == 'all'
+  if name == 'all':
+    for k, v in fireblast_models.items():
+      print(k, v(pretrained=False))
+  else:
+    net = fireblast_models[name](pretrained=pretrained)
+    if plot_network: print(net)
+    return net
+
+  return None
+
 
 if __name__ == '__main__':
-  test_fireblast_datasets(name='CUB200', iteration=True, rand_plot=True)
-  test_fireblast_datasets(name='Aircraft', iteration=True, rand_plot=True)
-  test_fireblast_datasets(name='Cars196', iteration=True, rand_plot=True)
+  TEST_FBD = True
+  TEST_FBM = False
+
+  if TEST_FBD:
+    test_fireblast_datasets(name='CUB200', iteration=False)
+    test_fireblast_datasets(name='Aircraft', iteration=False)
+    test_fireblast_datasets(name='Cars196', iteration=False)
+
+  if TEST_FBM:
+    test_fireblast_models(name="vgg11", pretrained=False, plot_network=True)
+    test_fireblast_models(name="resnet50", pretrained=True, plot_network=False)
+    test_fireblast_models(name="all", pretrained=True, plot_network=False)

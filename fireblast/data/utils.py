@@ -3,7 +3,7 @@ import torch
 from PIL import Image
 import matplotlib.pyplot as plt
 from pprint import PrettyPrinter
-pp = PrettyPrinter(indent=2)
+FBPP = PrettyPrinter(indent=2)
 
 
 def _check_anns(name, anns):
@@ -28,6 +28,7 @@ def _plot_pil_image(pil_image: Image):
   if isinstance(pil_image, torch.Tensor):
     from torchvision.transforms.functional import to_pil_image
     pil_image = to_pil_image(pil_image)
-  if not isinstance(pil_image, Image.Image): return 
+  if not isinstance(pil_image, Image.Image): return
   plt.imshow(pil_image)
+  plt.plot()
   plt.show()

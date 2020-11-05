@@ -41,14 +41,14 @@ class FireblastDataset(Dataset):
       label = self.target_transform(label)
 
     return image, label
-    
+
   def __len__(self):
     return len(self.samples)
 
 
 def get_cub200_anns(root: str = './CUB_200_2011', check: bool = False, **kwargs) -> dict:
   """Get CUB200-2011 dataset annotations as dict given root path.
-  
+
   Args:
     root (str): String of root directory path for CUB200-2011 dataset.
     check (bool): If True, checks annotation files existence and fix dict results.
@@ -79,7 +79,7 @@ def cub200(anns: dict, transform=None, target_transform=None, **kwargs) -> dict:
     anns (dict): Annotation dict returned by get_cub200_anns(...).
     transform: Torchvision transform for images.
     target_transform: Torchvision transform for targets.
-  
+
   Returns:
     dict (dict): A dict object contains traintest, train and test PyTorch Dataset instances.
 
@@ -104,7 +104,7 @@ def cub200(anns: dict, transform=None, target_transform=None, **kwargs) -> dict:
   # train/test indices
   train_idx = np.where(img_tt)[0]
   test_idx = np.where(np.logical_not(img_tt))[0]
-  
+
   train = Subset(traintest, indices=train_idx)
   test = Subset(traintest, indices=test_idx)
 
@@ -117,7 +117,7 @@ def cub200(anns: dict, transform=None, target_transform=None, **kwargs) -> dict:
 
 def get_fgvc_aircraft_anns(root: str = './fgvc-aircraft-2013b', check: bool = False, **kwargs) -> dict:
   """Get FGVC-Aircraft dataset annotations as dict given root path.
-  
+
   Args:
     root (str): String of root directory path for FGVC-Aircraft dataset.
     check (bool): If True, checks annotation files existence and fix dict results.
@@ -150,7 +150,7 @@ def fgvc_aircraft(anns: dict, transform=None, target_transform=None, **kwargs) -
     anns (dict): Annotation dict returned by get_fgvc_aircraft_anns(...).
     transform: Torchvision transform for images.
     target_transform: Torchvision transform for targets.
-  
+
   Returns:
     dict (dict): A dict object contains train, val, trainval and test PyTorch Dataset instances.
 
@@ -166,7 +166,7 @@ def fgvc_aircraft(anns: dict, transform=None, target_transform=None, **kwargs) -
   varts_idx = {}
   for i, vart in enumerate(varts):
     varts_idx[vart] = i
-  
+
   vart_imgs_train = _ann_to_list(ann_file=anns['images_variant_train'], varts_idx=varts_idx)
   vart_imgs_val = _ann_to_list(ann_file=anns['images_variant_val'], varts_idx=varts_idx)
   vart_imgs_trainval = _ann_to_list(ann_file=anns['images_variant_trainval'], varts_idx=varts_idx)
@@ -178,7 +178,7 @@ def fgvc_aircraft(anns: dict, transform=None, target_transform=None, **kwargs) -
   test = FireblastDataset(anns['image_folder'], vart_imgs_test, transform=transform, target_transform=target_transform)
 
   return {
-    'train': train, 
+    'train': train,
     'val': valid,
     'trainval': trainval,
     'test': test
@@ -187,7 +187,7 @@ def fgvc_aircraft(anns: dict, transform=None, target_transform=None, **kwargs) -
 
 def get_cars196_anns(root: str = './cars196', check: bool = False, **kwargs) -> dict:
   """Get Stanford Cars dataset annotations as dict given root path.
-  
+
   Args:
     root (str): String of root directory path for Stanford Cars dataset.
     check (bool): If True, checks annotation files existence and fix dict results.
@@ -218,7 +218,7 @@ def cars196(anns: dict, transform=None, target_transform=None, **kwargs) -> dict
     anns (dict): Annotation dict returned by get_cars196_anns(...).
     transform: Torchvision transform for images.
     target_transform: Torchvision transform for targets.
-  
+
   Returns:
     dict (dict): A dict object contains train and test PyTorch Dataset instances.
 
@@ -235,10 +235,10 @@ def cars196(anns: dict, transform=None, target_transform=None, **kwargs) -> dict
     cars_idx[car] = i + 1
   # annos: xxyy_bbox, class, fname
   cars_train_li = sio.loadmat(anns['cars_train_annos'], squeeze_me=True)['annotations'].tolist()
-  cars_train = [[str(x[-1]), int(x[-2])] for x in cars_train_li]
+  cars_train = [[str(x[-1]), int(x[-2]) - 1] for x in cars_train_li]
 
   cars_test_li = sio.loadmat(anns['cars_test_annos_withlabels'], squeeze_me=True)['annotations'].tolist()
-  cars_test = [[str(x[-1]), int(x[-2])] for x in cars_test_li]
+  cars_test = [[str(x[-1]), int(x[-2]) - 1] for x in cars_test_li]
 
   train = FireblastDataset(anns['train_image_folder'], cars_train, transform=transform, target_transform=target_transform)
   test = FireblastDataset(anns['test_image_folder'], cars_test, transform=transform, target_transform=target_transform)

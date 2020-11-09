@@ -78,22 +78,28 @@ def test_fireblast_models(name="resnet18", pretrained=False, plot_network=False)
         FBPP.pprint(v(pretrained=False))
   else:
     net = fireblast_models[name](pretrained=pretrained)
-    if plot_network: print(net)
+    if plot_network: FBPP.pprint(net)
     return net
 
   return None
 
-import fireblast.experimental.default as fbx
 
-def test_fireblast_experimental():
-  fbx_inst_1 = fbx.FireblastExperimental()
-  fbx_inst_1.default_aircraft()
-  # fbx_inst = fbx.set_experimental()
-  FBPP.pprint(fbx_inst_1)
+import fireblast.experiment.default as fbx
+
+
+def test_fireblast_experiment():
+  fbx_inst = fbx.FireblastExperiment()
+  fbx.default_cub200(fbx_inst)
+  FBPP.pprint(fbx_inst)
+  fbx.default_aircraft(fbx_inst)
+  FBPP.pprint(fbx_inst)
+  fbx.default_cub200(fbx_inst, loader=True)
+  FBPP.pprint(fbx_inst)
+
 
 if __name__ == '__main__':
   TEST_FBD = False
-  TEST_FBM = True
+  TEST_FBM = False
   TEST_FBX = True
 
   if TEST_FBD:
@@ -103,8 +109,8 @@ if __name__ == '__main__':
 
   if TEST_FBM:
     test_fireblast_models(name="vgg11", pretrained=False, plot_network=True)
-    test_fireblast_models(name="resnet50", pretrained=True, plot_network=False)
-    test_fireblast_models(name="all", pretrained=True, plot_network=True)
+    test_fireblast_models(name="resnet50", pretrained=True, plot_network=True)
+    # test_fireblast_models(name="all", pretrained=True, plot_network=True)
 
   if TEST_FBX:
-    test_fireblast_experimental()
+    test_fireblast_experiment()

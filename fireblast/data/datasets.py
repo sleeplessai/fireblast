@@ -46,7 +46,7 @@ class FireblastDataset(Dataset):
     return len(self.samples)
 
 
-def get_cub200_anns(root: str = './CUB_200_2011', check: bool = False, **kwargs) -> dict:
+def get_cub200_anns(root: str = './data/CUB_200_2011', check: bool = False, **kwargs) -> dict:
   """Get CUB200-2011 dataset annotations as dict given root path.
 
   Args:
@@ -115,7 +115,7 @@ def cub200(anns: dict, transform=None, target_transform=None, **kwargs) -> dict:
   }
 
 
-def get_fgvc_aircraft_anns(root: str = './fgvc-aircraft-2013b', check: bool = False, **kwargs) -> dict:
+def get_fgvc_aircraft_anns(root: str = './data/fgvc-aircraft-2013b', check: bool = False, **kwargs) -> dict:
   """Get FGVC-Aircraft dataset annotations as dict given root path.
 
   Args:
@@ -185,7 +185,7 @@ def fgvc_aircraft(anns: dict, transform=None, target_transform=None, **kwargs) -
   }
 
 
-def get_cars196_anns(root: str = './cars196', check: bool = False, **kwargs) -> dict:
+def get_cars196_anns(root: str = './data/cars196', check: bool = False, **kwargs) -> dict:
   """Get Stanford Cars dataset annotations as dict given root path.
 
   Args:
@@ -247,4 +247,3 @@ def cars196(anns: dict, transform=None, target_transform=None, **kwargs) -> dict
     'train': train,
     'test': test
   }
-

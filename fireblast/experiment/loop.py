@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .default import FireblastExperiment
+from .default import Experiment
 from typing import Union, Tuple
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -14,12 +14,12 @@ class Loop:
 
   @staticmethod
   def learn(
-    fbxo: Union[FireblastExperiment, DataLoader],
+    expt: Union[Experiment, DataLoader],
     model: nn.Module,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler._LRScheduler = None,
     criterion = F.cross_entropy,
-    device: Union[torch.device, str] = torch.device('cuda:0'),
+    device: Union[torch.device, str] = torch.device('cuda'),
     epoch: int = -1,
     summary_writer: torch.utils.tensorboard.SummaryWriter = None,
     stdout_freq: int = 50,
@@ -29,25 +29,25 @@ class Loop:
     Universal one-epoch leaner loop for training an image classification neural network.
 
     Args:
-      fbxo (FireblastExperiment, Dataloader): A FireblastExperiment or PyTorch DataLoader object for trainset iteration
+      expt (Experiment, Dataloader): Experiment or PyTorch DataLoader object for trainset iteration
       model (torch.nn.Module): PyTorch nerual network model(network)
       optimizer (torch.optim.Optimizer): PyTorch optimizer for training the given model
       scheduler (torch.optim.lr_scheduler._LRScheduler): PyTorch lr_scheduler object to update learning rate dynamically
       criterion (Callable): Loss function, cross entropy loss for image classification as default
       device (torch.device, str): The device where the model is trained
       epoch (int): Current training epoch
-      summary_writer (torch.utils.tensorboard.SummaryWriter): Tensorboard SummaryWriter records loss and accuracy
+      summary_writer (torch.utils.tensorboard.SummaryWriter): Tensorboard SummaryWriter
       stdout_freq (int): Info stdout frequency, no info will be printed if set std_freq < 0
 
     Returns:
       train_loss, train_accuracy: Float classification metric pair of training loss and accuracy at this epoch
 
     """
-    if isinstance(fbxo, FireblastExperiment):
-      assert fbxo.TrainsetLoader
-      trainset_loader = fbxo.TrainsetLoader
-    elif isinstance(fbxo, DataLoader):
-      trainset_loader = fbxo
+    if isinstance(expt, Experiment):
+      assert expt.trainset_loader
+      trainset_loader = expt.trainset_loader
+    elif isinstance(expt, DataLoader):
+      trainset_loader = expt
     else:
       raise RuntimeError
 
@@ -90,10 +90,10 @@ class Loop:
 
   @staticmethod
   def validate(
-    fbxo: Union[FireblastExperiment, DataLoader],
+    expt: Union[Experiment, DataLoader],
     model: nn.Module,
     criterion = F.cross_entropy,
-    device: Union[torch.device, str] = torch.device('cuda:0'),
+    device: Union[torch.device, str] = torch.device('cuda'),
     epoch: int = -1,
     summary_writer: torch.utils.tensorboard.SummaryWriter = None,
     stdout_freq: int = 50,
@@ -103,23 +103,23 @@ class Loop:
     Universal validation loop for testing an image classification neural network.
 
     Args:
-      fbxo (FireblastExperiment, Dataloader): A FireblastExperiment or PyTorch DataLoader object for testset iteration
+      expt (Experiment, Dataloader): Experiment or PyTorch DataLoader object for testset iteration
       model (torch.nn.Module): PyTorch nerual network model(network)
       criterion (Callable): Loss function, cross entropy loss for image classification as default
       device (torch.device, str): The device for the model validation
       epoch (int): The epoch validation after training
-      summary_writer (torch.utils.tensorboard.SummaryWriter): Tensorboard SummaryWriter records loss and accuracy on testset
+      summary_writer (torch.utils.tensorboard.SummaryWriter): Tensorboard SummaryWriter
       stdout_freq (int): Info stdout frequency, no info will be printed if set std_freq < 0
 
     Returns:
       val_loss, val_accuracy: Float classification metric pair of validation loss and accuracy on testset
 
     """
-    if isinstance(fbxo, FireblastExperiment):
-      assert fbxo.TestsetLoader
-      testset_loader = fbxo.TestsetLoader
-    elif isinstance(fbxo, DataLoader):
-      testset_loader = fbxo
+    if isinstance(expt, Experiment):
+      assert expt.testset_loader
+      testset_loader = expt.testset_loader
+    elif isinstance(expt, DataLoader):
+      testset_loader = expt
     else:
       raise RuntimeError
 

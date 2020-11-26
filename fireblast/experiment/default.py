@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from torch.utils.data import Dataset, DataLoader
-import fireblast.data.datasets as fbd
+import fireblast.data.datasets as fbdd
 import torchvision.transforms as transforms
 
 
 __all__ = [
-  'FireblastExperiment',
+  'Experiment',
   'default_trainset_transform',
   'default_testset_transform',
   'default_cars196',
@@ -16,20 +16,23 @@ __all__ = [
 
 
 @dataclass
-class FireblastExperiment:
-  Id: str = None
-  TrainsetImageTransform: object = None
-  TrainsetTargetTransform: object = None
-  TestsetImageTransform: object = None
-  TestsetTargetTransform: object = None
-  Trainset: Dataset = None
-  Testset: Dataset = None
-  TrainsetLoader: DataLoader = None
-  TestsetLoader: DataLoader = None
+class Experiment:
+  expt_id: str = None
+  trainset_im_transform: object = None
+  trainset_gt_transform: object = None
+  testset_im_transform: object = None
+  testset_gt_transform: object = None
+  category_cnt: int = 0
+  trainset: Dataset = None
+  validset: Dataset = None
+  trainset: Dataset = None
+  trainset_loader: DataLoader = None
+  validset_loader: DataLoader = None
+  testset_loader: DataLoader = None
 
 
-def default_trainset_transform(x: FireblastExperiment, rand_crop_size=(384, 384), rand_hfilp=True):
-  if x.TrainsetImageTransform: return
+def default_trainset_transform(x: Experiment, rand_crop_size=(448, 448), rand_hfilp=True):
+  if x.trainset_im_transform: return
   _compose = []
   _compose.append(transforms.Resize((int(rand_crop_size[0] * 1.20), int(rand_crop_size[1] * 1.20))))
   _compose.append(transforms.RandomCrop(size=rand_crop_size))
@@ -37,64 +40,83 @@ def default_trainset_transform(x: FireblastExperiment, rand_crop_size=(384, 384)
     _compose.append(transforms.RandomHorizontalFlip())
   _compose.append(transforms.ToTensor())
   _compose.append(transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)))  # mean, std on imagenet
-  x.TrainsetImageTransform = transforms.Compose(_compose)
-  x.TrainsetTargetTransform = None
-  return x.TrainsetImageTransform, x.TrainsetTargetTransform
+  x.trainset_im_transform = transforms.Compose(_compose)
+  x.trainset_gt_transform = None
+  return x.trainset_im_transform, x.trainset_gt_transform
 
 
-def default_testset_transform(x: FireblastExperiment, center_crop_size=(384, 384)):
-  if x.TestsetImageTransform: return
+def default_testset_transform(x: Experiment, center_crop_size=(448, 448)):
+  if x.testset_im_transform: return
   _compose = []
   _compose.append(transforms.Resize((int(center_crop_size[0] * 1.20), int(center_crop_size[1] * 1.20))))
   _compose.append(transforms.CenterCrop(size=center_crop_size))
   _compose.append(transforms.ToTensor())
   _compose.append(transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)))  # mean, std on imagenet
-  x.TestsetImageTransform = transforms.Compose(_compose)
-  x.TestsetTargetTransform = None
-  return x.TestsetImageTransform, x.TestsetTargetTransform
+  x.testset_im_transform = transforms.Compose(_compose)
+  x.testset_gt_transform = None
+  return x.testset_im_transform, x.testset_gt_transform
 
 
-def default_dataloader(dataset, batch_size=8, shuffle=True, num_workers=4):
-  return DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+def default_dataloader(dataset, batch_size=16, shuffle=True, num_workers=6, use_for=None):
+  if use_for == 'train':
+    return DataLoader(dataset, batch_size=12, shuffle=True, num_workers=num_workers)
+  elif use_for in ['test', 'valid']:
+    return DataLoader(dataset, batch_size=6, shuffle=False, num_workers=num_workers)
+  else:
+    return DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 
 
-def default_cars196(x: FireblastExperiment, loader=False):
-  x.Id = "Cars196"
+def default_cars196(x: Experiment, data_loc=None, loader=False):
+  x.expt_id = "Cars196"
+  x.category_cnt = 196
   default_trainset_transform(x)
   default_testset_transform(x)
-  cars196_anno = fbd.get_cars196_anns(root=r"/home/mlss/data/cars196", check=True)
-  cars196_data = fbd.cars196(cars196_anno, transform=x.TrainsetImageTransform, target_transform=x.TrainsetTargetTransform)
-  x.Trainset, x.Testset = cars196_data['train'], cars196_data['test']
+  if data_loc:
+    _anno = fbdd.get_cars196_anns(root=data_loc, check=True)
+  else:
+    _anno = fbdd.get_cars196_anns(check=True)
+  cars196_data = fbdd.cars196(_anno, transform=x.trainset_im_transform, target_transform=x.trainset_gt_transform)
+  x.trainset, x.testset = cars196_data['train'], cars196_data['test']
   if not loader:
-    return x.Trainset, x.Testset
-  x.TrainsetLoader = default_dataloader(x.Trainset)
-  x.TestsetLoader = default_dataloader(x.Testset)
-  return x.TrainsetLoader, x.TestsetLoader
+    return x.trainset, x.trainset
+  x.trainset_loader = default_dataloader(x.trainset, use_for='train')
+  x.testset_loader = default_dataloader(x.trainset, use_for='test')
+  return x.trainset_loader, x.testset_loader
 
 
-def default_cub200(x: FireblastExperiment, loader=False):
-  x.Id = "CUB-200"
+def default_cub200(x: Experiment, data_loc=None, loader=False):
+  x.expt_id = "CUB-200"
+  x.category_cnt = 200
   default_trainset_transform(x)
   default_testset_transform(x)
-  cub200_anno = fbd.get_cub200_anns(root=r"/home/mlss/data/CUB_200_2011", check=True)
-  cub200_data = fbd.cub200(cub200_anno, transform=x.TrainsetImageTransform, target_transform=x.TrainsetTargetTransform)
-  x.Trainset, x.Testset = cub200_data['train'], cub200_data['test']
+  if data_loc:
+    _anno = fbdd.get_cub200_anns(root=data_loc, check=True)
+  else:
+    _anno = fbdd.get_cub200_anns(check=True)
+  _data = fbdd.cub200(_anno, transform=x.trainset_im_transform, target_transform=x.trainset_gt_transform)
+  x.trainset, x.trainset = _data['train'], _data['test']
   if not loader:
-    return x.Trainset, x.Testset
-  x.TrainsetLoader = default_dataloader(x.Trainset)
-  x.TestsetLoader = default_dataloader(x.Testset)
-  return x.TrainsetLoader, x.TestsetLoader
+    return x.trainset, x.trainset
+  x.trainset_loader = default_dataloader(x.trainset, use_for='train')
+  x.testset_loader = default_dataloader(x.trainset, use_for='test')
+  return x.trainset_loader, x.testset_loader
 
 
-def default_aircraft(x: FireblastExperiment, loader=False):
-  x.Id = "FGVC-Aircraft"
+def default_aircraft(x: Experiment, data_loc=None, trainval=True, loader=False):
+  x.expt_id = "FGVC-Aircraft"
+  x.category_cnt = 102
   default_trainset_transform(x)
   default_testset_transform(x)
-  aircraft_anno = fbd.get_fgvc_aircraft_anns(root=r"/home/mlss/data/fgvc-aircraft-2013b", check=True)
-  aircraft_data = fbd.fgvc_aircraft(aircraft_anno, transform=x.TrainsetImageTransform, target_transform=x.TrainsetTargetTransform)
-  x.Trainset, x.Testset = aircraft_data['train'], aircraft_data['test']
+  if data_loc:
+    _anno = fbdd.get_fgvc_aircraft_anns(root=data_loc, check=True)
+  else:
+    _anno = fbdd.get_fgvc_aircraft_anns(check=True)
+  _data = fbdd.fgvc_aircraft(_anno, transform=x.trainset_im_transform, target_transform=x.trainset_gt_transform)
+  x.trainset = _data['trainval'] if trainval else _data['train']
+  x.validset, x.testset = _data['val'], _data['test']
   if not loader:
-    return x.Trainset, x.Testset
-  x.TrainsetLoader = default_dataloader(x.Trainset)
-  x.TestsetLoader = default_dataloader(x.Testset)
-  return x.TrainsetLoader, x.TestsetLoader
+    return x.trainset, x.validset, x.trainset
+  x.trainset_loader = default_dataloader(x.trainset, use_for='train')
+  x.validset_loader = default_dataloader(x.validset, use_for='valid')
+  x.testset_loader = default_dataloader(x.trainset, use_for='test')
+  return x.trainset_loader, x.validset_loader, x.testset_loader

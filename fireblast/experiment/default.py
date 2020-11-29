@@ -59,9 +59,9 @@ def default_testset_transform(x: Experiment, center_crop_size=(448, 448)):
 
 def default_dataloader(dataset, batch_size=16, shuffle=True, num_workers=6, use_for=None):
   if use_for == 'train':
-    return DataLoader(dataset, batch_size=12, shuffle=True, num_workers=num_workers)
+    return DataLoader(dataset, batch_size=16, shuffle=True, num_workers=num_workers)
   elif use_for in ['test', 'valid']:
-    return DataLoader(dataset, batch_size=6, shuffle=False, num_workers=num_workers)
+    return DataLoader(dataset, batch_size=8, shuffle=False, num_workers=num_workers)
   else:
     return DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 
@@ -78,9 +78,9 @@ def default_cars196(x: Experiment, data_loc=None, loader=False):
   cars196_data = fbdd.cars196(_anno, transform=x.trainset_im_transform, target_transform=x.trainset_gt_transform)
   x.trainset, x.testset = cars196_data['train'], cars196_data['test']
   if not loader:
-    return x.trainset, x.trainset
+    return x.trainset, x.testset
   x.trainset_loader = default_dataloader(x.trainset, use_for='train')
-  x.testset_loader = default_dataloader(x.trainset, use_for='test')
+  x.testset_loader = default_dataloader(x.testset, use_for='test')
   return x.trainset_loader, x.testset_loader
 
 
@@ -94,11 +94,11 @@ def default_cub200(x: Experiment, data_loc=None, loader=False):
   else:
     _anno = fbdd.get_cub200_anns(check=True)
   _data = fbdd.cub200(_anno, transform=x.trainset_im_transform, target_transform=x.trainset_gt_transform)
-  x.trainset, x.trainset = _data['train'], _data['test']
+  x.trainset, x.testset = _data['train'], _data['test']
   if not loader:
-    return x.trainset, x.trainset
+    return x.trainset, x.testset
   x.trainset_loader = default_dataloader(x.trainset, use_for='train')
-  x.testset_loader = default_dataloader(x.trainset, use_for='test')
+  x.testset_loader = default_dataloader(x.testset, use_for='test')
   return x.trainset_loader, x.testset_loader
 
 
@@ -115,8 +115,8 @@ def default_aircraft(x: Experiment, data_loc=None, trainval=True, loader=False):
   x.trainset = _data['trainval'] if trainval else _data['train']
   x.validset, x.testset = _data['val'], _data['test']
   if not loader:
-    return x.trainset, x.validset, x.trainset
+    return x.trainset, x.validset, x.testset
   x.trainset_loader = default_dataloader(x.trainset, use_for='train')
   x.validset_loader = default_dataloader(x.validset, use_for='valid')
-  x.testset_loader = default_dataloader(x.trainset, use_for='test')
+  x.testset_loader = default_dataloader(x.testset, use_for='test')
   return x.trainset_loader, x.validset_loader, x.testset_loader

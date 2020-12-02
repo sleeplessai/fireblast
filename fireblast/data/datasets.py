@@ -5,7 +5,7 @@ import numpy as np
 from pathlib import Path
 from PIL import Image
 import scipy.io as sio
-from .utils import _check_anns, _ann_to_list
+import logging
 
 
 __all__ = [
@@ -47,14 +47,15 @@ class FireblastDataset(Dataset):
 
 
 def get_cub200_anns(root: str = './data/CUB_200_2011', check: bool = False, **kwargs) -> dict:
-  """Get CUB200-2011 dataset annotations as dict given root path.
+  """Get CUB-200-2011 dataset annotations as dict given root path.
+    Dataset URL: http://www.vision.caltech.edu/visipedia/CUB-200-2011.html
 
   Args:
-    root (str): String of root directory path for CUB200-2011 dataset.
+    root (str): String of root directory path for CUB-200-2011 dataset.
     check (bool): If True, checks annotation files existence and fix dict results.
 
   Returns:
-    dict (dict): CUB200-2011 dataset annotation dict object.
+    dict (dict): CUB-200-2011 dataset annotation dict object.
 
   """
   rt_path = Path(root)
@@ -67,13 +68,14 @@ def get_cub200_anns(root: str = './data/CUB_200_2011', check: bool = False, **kw
     'bounding_boxes': rt_path / 'bounding_boxes.txt',
     'root': rt_path
   }
-  if check: _check_anns(name='CUB200', anns=anns_dict)
+  if check: _check_anns(name='Caltech-UCSD_Birds-200-2011', anns=anns_dict)
 
   return anns_dict
 
 
 def cub200(anns: dict, transform=None, target_transform=None, **kwargs) -> dict:
-  """Create PyTorch Dataset instances for CUB200_2011 dataset.
+  """Create PyTorch Dataset instances for CUB-200-2011 dataset.
+    Dataset URL: http://www.vision.caltech.edu/visipedia/CUB-200-2011.html
 
   Args:
     anns (dict): Annotation dict returned by get_cub200_anns(...).
@@ -117,6 +119,7 @@ def cub200(anns: dict, transform=None, target_transform=None, **kwargs) -> dict:
 
 def get_fgvc_aircraft_anns(root: str = './data/fgvc-aircraft-2013b', check: bool = False, **kwargs) -> dict:
   """Get FGVC-Aircraft dataset annotations as dict given root path.
+    Dataset URL: http://www.robots.ox.ac.uk/~vgg/data/fgvc-aircraft/
 
   Args:
     root (str): String of root directory path for FGVC-Aircraft dataset.
@@ -145,6 +148,7 @@ def get_fgvc_aircraft_anns(root: str = './data/fgvc-aircraft-2013b', check: bool
 
 def fgvc_aircraft(anns: dict, transform=None, target_transform=None, **kwargs) -> dict:
   """Create PyTorch Dataset instances for FGVC-Aircraft dataset.
+    Dataset URL: http://www.robots.ox.ac.uk/~vgg/data/fgvc-aircraft/
 
   Args:
     anns (dict): Annotation dict returned by get_fgvc_aircraft_anns(...).
@@ -187,6 +191,7 @@ def fgvc_aircraft(anns: dict, transform=None, target_transform=None, **kwargs) -
 
 def get_cars196_anns(root: str = './data/cars196', check: bool = False, **kwargs) -> dict:
   """Get Stanford Cars dataset annotations as dict given root path.
+    Dataset URL: https://ai.stanford.edu/~jkrause/cars/car_dataset.html
 
   Args:
     root (str): String of root directory path for Stanford Cars dataset.
@@ -206,13 +211,14 @@ def get_cars196_anns(root: str = './data/cars196', check: bool = False, **kwargs
     'cars_test_annos_withlabels': devkit_path / 'cars_test_annos_withlabels.mat',
     'root': rt_path
   }
-  if check: _check_anns(name='Cars196', anns=anns_dict)
+  if check: _check_anns(name='Stanford_Cars', anns=anns_dict)
 
   return anns_dict
 
 
 def cars196(anns: dict, transform=None, target_transform=None, **kwargs) -> dict:
   """Create PyTorch Dataset instances for Stanford Cars dataset.
+    Dataset URL: https://ai.stanford.edu/~jkrause/cars/car_dataset.html
 
   Args:
     anns (dict): Annotation dict returned by get_cars196_anns(...).
@@ -247,3 +253,22 @@ def cars196(anns: dict, transform=None, target_transform=None, **kwargs) -> dict
     'train': train,
     'test': test
   }
+
+
+def _check_anns(name, anns):
+  logging.warning(f'Checking {name} annotation existence')
+  for k, v in anns.items():
+    if not v.exists():
+      anns[k] = None
+      logging.warning(f'{name}.{k} missed.')
+
+
+def _ann_to_list(ann_file, varts_idx):
+  ann_str_list = [l.rstrip('\n') for l in open(ann_file, 'r').readlines()]
+  sample_list = []
+  for s in ann_str_list:
+    t = s.find(' ')
+    vi = [s[:t], varts_idx[s[t + 1:]]]
+    sample_list.append(vi)
+  return sample_list
+

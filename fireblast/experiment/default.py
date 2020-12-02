@@ -34,7 +34,7 @@ class Experiment:
 def default_trainset_transform(x: Experiment, rand_crop_size=(448, 448), rand_hfilp=True):
   if x.trainset_im_transform: return
   _compose = []
-  _compose.append(transforms.Resize((int(rand_crop_size[0] * 1.20), int(rand_crop_size[1] * 1.20))))
+  _compose.append(transforms.Resize(size=(rand_crop_size[0] + 64, rand_crop_size[1] + 64)))
   _compose.append(transforms.RandomCrop(size=rand_crop_size))
   if rand_hfilp:
     _compose.append(transforms.RandomHorizontalFlip())
@@ -48,7 +48,7 @@ def default_trainset_transform(x: Experiment, rand_crop_size=(448, 448), rand_hf
 def default_testset_transform(x: Experiment, center_crop_size=(448, 448)):
   if x.testset_im_transform: return
   _compose = []
-  _compose.append(transforms.Resize((int(center_crop_size[0] * 1.20), int(center_crop_size[1] * 1.20))))
+  _compose.append(transforms.Resize(size=(center_crop_size[0] + 64, center_crop_size[1] + 64)))
   _compose.append(transforms.CenterCrop(size=center_crop_size))
   _compose.append(transforms.ToTensor())
   _compose.append(transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)))  # mean, std on imagenet
@@ -67,7 +67,7 @@ def default_dataloader(dataset, batch_size=16, shuffle=True, num_workers=6, use_
 
 
 def default_cars196(x: Experiment, data_loc=None, loader=False):
-  x.expt_id = "Cars196"
+  x.expt_id = "Car"
   x.category_cnt = 196
   default_trainset_transform(x)
   default_testset_transform(x)
@@ -85,7 +85,7 @@ def default_cars196(x: Experiment, data_loc=None, loader=False):
 
 
 def default_cub200(x: Experiment, data_loc=None, loader=False):
-  x.expt_id = "CUB-200"
+  x.expt_id = "CUB"
   x.category_cnt = 200
   default_trainset_transform(x)
   default_testset_transform(x)
@@ -103,8 +103,8 @@ def default_cub200(x: Experiment, data_loc=None, loader=False):
 
 
 def default_aircraft(x: Experiment, data_loc=None, trainval=True, loader=False):
-  x.expt_id = "FGVC-Aircraft"
-  x.category_cnt = 102
+  x.expt_id = "Air"
+  x.category_cnt = 100
   default_trainset_transform(x)
   default_testset_transform(x)
   if data_loc:

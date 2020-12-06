@@ -25,7 +25,7 @@ class Experiment:
   category_cnt: int = 0
   trainset: Dataset = None
   validset: Dataset = None
-  trainset: Dataset = None
+  testset: Dataset = None
   trainset_loader: DataLoader = None
   validset_loader: DataLoader = None
   testset_loader: DataLoader = None

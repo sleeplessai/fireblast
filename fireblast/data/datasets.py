@@ -9,12 +9,13 @@ import logging
 
 
 __all__ = [
-  'get_cub200_anns', 'cub200',
-  'get_fgvc_aircraft_anns', 'fgvc_aircraft',
-  'get_cars196_anns', 'cars196'
+  'get_cub200_anns',
+  'cub200',
+  'get_fgvc_aircraft_anns',
+  'fgvc_aircraft',
+  'get_cars196_anns',
+  'cars196'
 ]
-
-__datasets__ = ['CUB_200_2011', 'fgvc-aircraft-2013b', 'cars196']
 
 
 class FireblastDataset(Dataset):

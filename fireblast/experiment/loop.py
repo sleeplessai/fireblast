@@ -1,12 +1,14 @@
+import time
+from typing import Union, Tuple
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .default import Experiment
-from typing import Union, Tuple
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-import numpy as np
-import time
+
+from . import Experiment
 
 
 __all__ = ['Loop']
@@ -166,8 +168,8 @@ class Loop:
       if smry and epoch != -1:
         loss_scalars, acc_scalars = {}, {}
         for i in range(multihead):
-          loss_scalars[f'loss{i}'] = train_loss[i]
-          acc_scalars[f'acc{i}'] = train_acc[i]
+          loss_scalars[f'Loss{i}'] = train_loss[i]
+          acc_scalars[f'Acc{i}'] = train_acc[i]
         smry.add_scalars('Training/Loss/epoch', loss_scalars, epoch)
         smry.add_scalars('Training/Accuracy/epoch', acc_scalars, epoch)
 
@@ -317,8 +319,8 @@ class Loop:
       if smry and epoch != -1:
         loss_scalars, acc_scalars = {}, {}
         for i in range(multihead):
-          loss_scalars[f'loss{i}'] = val_loss[i]
-          acc_scalars[f'acc{i}'] = val_acc[i]
+          loss_scalars[f'Loss{i}'] = val_loss[i]
+          acc_scalars[f'Acc{i}'] = val_acc[i]
         smry.add_scalars('Validation/Loss/epoch', loss_scalars, epoch)
         smry.add_scalars('Validation/Accuracy/epoch', acc_scalars, epoch)
 

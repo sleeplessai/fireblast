@@ -1,19 +1,13 @@
-from dataclasses import dataclass
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as T
 
-from .. import (
-  get_cars196_anns,
-  cars196,
-  get_cub200_anns,
-  cub200,
-  get_fgvc_aircraft_anns,
-  fgvc_aircraft
-)
+from . import Experiment
+from .. import get_cub200_anns, cub200
+from .. import get_cars196_anns, cars196
+from .. import get_fgvc_aircraft_anns, fgvc_aircraft
 
 
 __all__ = [
-  'Experiment',
   'default_trainset_transform',
   'default_testset_transform',
   'default_cars196',
@@ -21,22 +15,6 @@ __all__ = [
   'default_cub200',
   'default_dataloader',
 ]
-
-
-@dataclass
-class Experiment:
-  expt_id: str = None
-  trainset_im_transform: object = None
-  trainset_gt_transform: object = None
-  testset_im_transform: object = None
-  testset_gt_transform: object = None
-  category_cnt: int = 0
-  trainset: Dataset = None
-  validset: Dataset = None
-  testset: Dataset = None
-  trainset_loader: DataLoader = None
-  validset_loader: DataLoader = None
-  testset_loader: DataLoader = None
 
 
 def default_trainset_transform(x: Experiment, rand_crop_size=(448, 448), rand_hfilp=True):
